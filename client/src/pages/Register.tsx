@@ -25,7 +25,7 @@ const Register = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  const { register, handleSubmit, watch, formState: { errors }, setValue } = useForm({
+  const { register, handleSubmit, watch, formState: { errors } } = useForm({
     resolver: yupResolver(schema),
     defaultValues: {
       competitionId: searchParams.get('competition') || '',
