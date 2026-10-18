@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 import Cookies from 'js-cookie';
-import { Users, Activity } from 'lucide-react';
+import { Users, Trophy, IndianRupee, CheckCircle2, Clock, ArrowRight, Loader2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+import logoImg from '../../assets/logo.png';
 
 const Dashboard = () => {
   const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -18,50 +21,169 @@ const Dashboard = () => {
         setStats(res.data);
       } catch (error) {
         toast.error('Failed to load dashboard stats');
+      } finally {
+        setLoading(false);
       }
     };
     fetchStats();
   }, []);
 
-  if (!stats) return <div className="text-gray-500">Loading stats...</div>;
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-80">
+        <Loader2 className="animate-spin h-10 w-10 text-orange-600" />
+      </div>
+    );
+  }
+
+  if (!stats) return <div className="text-gray-500">डेटा लोड नहीं हो सका।</div>;
+
+  const total = stats.totalParticipants || 0;
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Dashboard Overview</h1>
+    <div className="space-y-8 max-w-7xl mx-auto">
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex items-center">
-          <div className="bg-orange-100 p-4 rounded-lg mr-4">
-            <Users className="w-8 h-8 text-orange-600" />
+      {/* 🚩 Branded Welcome Header Banner */}
+      <div className="bg-gradient-to-r from-[#14213D] via-[#1b2d52] to-[#14213D] rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden border-2 border-orange-500/20">
+        <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-[#FF9933]/15 rounded-full blur-3xl pointer-events-none"></div>
+        
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-6 relative z-10">
+          <div className="flex items-center gap-4 sm:gap-5 text-center sm:text-left">
+            <div className="relative p-1 rounded-full bg-gradient-to-tr from-[#FF9933] to-[#138808] shadow-[0_0_20px_rgba(255,153,51,0.5)] shrink-0">
+              <img 
+                src={logoImg} 
+                alt="Logo" 
+                className="h-16 w-16 sm:h-20 sm:w-20 rounded-full object-cover border-2 border-white/80" 
+              />
+            </div>
+            <div>
+              <div className="inline-flex items-center gap-1.5 text-xs text-orange-200 font-semibold mb-1">
+                <Sparkles className="w-3.5 h-3.5 text-[#FF9933]" /> मुख्य प्रशासनिक डैशबोर्ड
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-black text-white">
+                <span className="text-[#FF9933]">वन्दे मातरम्</span> परिवार, रेगवाँ
+              </h1>
+              <p className="text-gray-300 text-sm mt-0.5 font-medium">
+                प्रतिभामंच 2026 — पंजीकरण एवं प्रबंधन रिपोर्ट
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm text-gray-500 font-medium">Total Participants</p>
-            <p className="text-3xl font-bold text-gray-900">{stats.totalParticipants}</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex items-center">
-          <div className="bg-blue-100 p-4 rounded-lg mr-4">
-            <Activity className="w-8 h-8 text-blue-600" />
-          </div>
-          <div>
-            <p className="text-sm text-gray-500 font-medium">Active Competitions</p>
-            <p className="text-3xl font-bold text-gray-900">{stats.activeCompetitions}</p>
+
+          <div className="flex items-center gap-3">
+            <Link
+              to="/admin/participants"
+              className="bg-[#FF9933] hover:bg-orange-500 text-gray-950 px-5 py-2.5 rounded-xl font-bold text-sm shadow-lg hover:shadow-orange-500/30 transition-all flex items-center gap-2"
+            >
+              प्रतिभागी सूची देखें <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
         </div>
       </div>
 
-      <h2 className="text-xl font-bold text-gray-900 mb-4">Registrations by Competition</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {stats.statsByCompetition.map((comp: any, idx: number) => (
-          <div key={idx} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 className="font-semibold text-gray-700 mb-2">{comp.name}</h3>
-            <div className="flex items-end justify-between">
-              <span className="text-4xl font-bold text-gray-900">{comp.count}</span>
-              <span className="text-sm text-gray-500">participants</span>
-            </div>
+      {/* 📊 Key Statistics Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        
+        {/* Total Registrations */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex items-center justify-between hover:shadow-md transition">
+          <div>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">कुल प्रतिभागी</p>
+            <p className="text-3xl sm:text-4xl font-extrabold text-[#14213D] mt-1">{stats.totalParticipants}</p>
+            <p className="text-xs text-gray-500 mt-1">ऑनलाइन पंजीकृत</p>
           </div>
-        ))}
+          <div className="w-14 h-14 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center text-[#FF9933] shrink-0">
+            <Users className="w-7 h-7" />
+          </div>
+        </div>
+
+        {/* Total Revenue Collected */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex items-center justify-between gap-3 hover:shadow-md transition">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider truncate">कुल प्राप्त राशि</p>
+            <p className="text-2xl sm:text-3xl lg:text-4xl font-black text-emerald-600 mt-1 tracking-tight truncate">
+              ₹{Number(stats.totalRevenue || 0).toLocaleString('en-IN')}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">फीस संग्रह (नकद/UPI)</p>
+          </div>
+          <div className="w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 shrink-0">
+            <IndianRupee className="w-7 h-7" />
+          </div>
+        </div>
+
+        {/* Paid Registrations */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex items-center justify-between hover:shadow-md transition">
+          <div>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">भुगतान पूर्ण (Paid)</p>
+            <p className="text-3xl sm:text-4xl font-extrabold text-blue-600 mt-1">{stats.paidCount || 0}</p>
+            <p className="text-xs text-gray-500 mt-1">सत्यापित प्रतिभागी</p>
+          </div>
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 shrink-0">
+            <CheckCircle2 className="w-7 h-7" />
+          </div>
+        </div>
+
+        {/* Pending Payments */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex items-center justify-between hover:shadow-md transition">
+          <div>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">लंबित भुगतान (Pending)</p>
+            <p className="text-3xl sm:text-4xl font-extrabold text-amber-600 mt-1">{stats.pendingCount || 0}</p>
+            <p className="text-xs text-gray-500 mt-1">फीस बाकी</p>
+          </div>
+          <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 shrink-0">
+            <Clock className="w-7 h-7" />
+          </div>
+        </div>
+
       </div>
+
+      {/* 🏆 Registrations by Competition */}
+      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 sm:p-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 pb-4 border-b border-gray-100 gap-2">
+          <div>
+            <h2 className="text-xl font-bold text-[#14213D] flex items-center gap-2">
+              <Trophy className="w-5 h-5 text-[#FF9933]" /> प्रतियोगिता अनुसार पंजीकरण
+            </h2>
+            <p className="text-gray-500 text-xs mt-0.5">प्रत्येक प्रतियोगिता में सम्मिलित प्रतिभागियों की संख्या</p>
+          </div>
+          <span className="text-xs font-semibold bg-gray-100 text-gray-600 px-3 py-1 rounded-full self-start sm:self-auto">
+            सक्रिय प्रतियोगिताएं: {stats.activeCompetitions}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {stats.statsByCompetition.map((comp: any, idx: number) => {
+            const count = comp.count || 0;
+            const percent = total > 0 ? Math.round((count / total) * 100) : 0;
+            return (
+              <div 
+                key={idx} 
+                className="bg-[#FBFBFE] hover:bg-orange-50/40 rounded-2xl border border-gray-200/80 p-5 transition-all hover:shadow-md"
+              >
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <h3 className="font-bold text-[#14213D] text-base leading-snug">{comp.name}</h3>
+                  <span className="text-xs font-extrabold bg-orange-100 text-[#FF9933] px-2.5 py-1 rounded-full shrink-0">
+                    {count}
+                  </span>
+                </div>
+                
+                {/* Progress bar */}
+                <div className="space-y-1.5 mt-4">
+                  <div className="flex justify-between text-xs text-gray-500 font-medium">
+                    <span>कुल का हिस्सा</span>
+                    <span className="font-bold text-gray-700">{percent}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 h-2.5 rounded-full overflow-hidden">
+                    <div 
+                      className="bg-gradient-to-r from-[#FF9933] to-orange-500 h-full rounded-full transition-all duration-500"
+                      style={{ width: `${percent}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
     </div>
   );
 };

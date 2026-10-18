@@ -9,10 +9,13 @@ import AdminLogin from './pages/admin/Login';
 import DashboardLayout from './pages/admin/DashboardLayout';
 import Dashboard from './pages/admin/Dashboard';
 import ParticipantsList from './pages/admin/ParticipantsList';
+import CompetitionsManagement from './pages/admin/CompetitionsManagement';
+import ScrollToTop from './components/ScrollToTop';
 
 function App() {
   return (
     <Router>
+      <ScrollToTop />
       <Toaster position="top-center" />
       <div className="min-h-screen bg-orange-50 font-sans text-gray-900 flex flex-col">
         {/* We don't want Navbar/Footer on admin routes, so we can conditionally render or restructure. For simplicity, we can use wildcards or layout routes. But let's restructure slightly. */}
@@ -37,8 +40,7 @@ function App() {
           <Route path="/admin" element={<DashboardLayout />}>
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="participants" element={<ParticipantsList />} />
-            {/* Fallback for competitions & banners */}
-            <Route path="competitions" element={<div className="p-8 text-2xl">Competitions Management (Coming soon)</div>} />
+            <Route path="competitions" element={<CompetitionsManagement />} />
             <Route path="banners" element={<div className="p-8 text-2xl">Banners Management (Coming soon)</div>} />
           </Route>
         </Routes>
