@@ -41,8 +41,8 @@ const seedData = async () => {
         secondPrize: '₹501',
         categories: ['Class 1 to 8', 'Class 9 to College'],
         rules: [
-          'Participant must be a student.',
-          'Open to students from any village.'
+          'केवल विद्यार्थियों के लिए (Participant must be a student)।',
+          'किसी भी गाँव के विद्यार्थी भाग ले सकते हैं।'
         ],
         isActive: true,
       },
@@ -56,15 +56,15 @@ const seedData = async () => {
         firstPrize: '₹2100',
         categories: ['Class 1 to 8', 'Class 9 to College'],
         rules: [
-          'Participant must be a student.',
-          'Booklet will be provided 15 days before the competition.'
+          'केवल विद्यार्थियों के लिए।',
+          'प्रतियोगिता से 15 दिन पहले प्रश्नपुस्तिका दी जाएगी।'
         ],
         isActive: true,
       },
       {
         name: 'शतरंज प्रतियोगिता',
         slug: 'chess',
-        description: 'दिमागी खेल शतरंज में अपनी रणनीति दिखाएं।',
+        description: 'दिमागी खेल शतरंज में अपनी रणनीति दिखाएं। आयु की कोई सीमा नहीं।',
         date: '8 November 2026',
         time: 'Morning',
         entryFee: 30,
@@ -72,22 +72,8 @@ const seedData = async () => {
         secondPrize: '₹701',
         categories: ['Open Category'],
         rules: [
-          'No age limit.',
-          'Participant must be a student.',
-          'Open to students from any village.'
-        ],
-        isActive: true,
-      },
-      {
-        name: 'प्रतिभा खोज – Talent Hunt',
-        slug: 'talent-hunt',
-        description: 'अपनी छिपी हुई प्रतिभा को मंच पर लाएं (Singing, Poetry, Speech, Acting, Dance, Instrument, Mimicry etc).',
-        date: '9 November 2026',
-        time: 'Evening/Night',
-        entryFee: 0,
-        categories: ['Open for all students'],
-        rules: [
-          'Open for students from any village.'
+          'आयु की कोई सीमा नहीं है (No age limit)।',
+          'अन्य सभी प्रतियोगिताएं केवल विद्यार्थियों के लिए हैं।'
         ],
         isActive: true,
       }

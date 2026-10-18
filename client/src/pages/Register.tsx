@@ -1,22 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import * as yup from 'yup';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CheckSquare } from 'lucide-react';
+import logoImg from '../assets/logo.png';
 
-const schema = yup.object({
-  competitionId: yup.string().required('प्रतियोगिता का चयन करें'),
-  participantName: yup.string().required('प्रतिभागी का नाम अनिवार्य है'),
-  fatherName: yup.string().required('पिता का नाम अनिवार्य है'),
-  village: yup.string().required('गाँव का नाम अनिवार्य है'),
-  className: yup.string(),
-  mobile: yup.string().matches(/^[0-9]{10}$/, 'सही 10 अंकों का मोबाइल नंबर दर्ज करें').required('मोबाइल नंबर अनिवार्य है'),
-  studentStatus: yup.boolean().oneOf([true], 'विद्यार्थी होना अनिवार्य है').required(),
-  category: yup.string()
-});
+// Class options based on category
+const CLASS_OPTIONS: Record<string, string[]> = {
+  '1st to 8th': ['कक्षा 1', 'कक्षा 2', 'कक्षा 3', 'कक्षा 4', 'कक्षा 5', 'कक्षा 6', 'कक्षा 7', 'कक्षा 8'],
+  '9th to College': ['कक्षा 9', 'कक्षा 10', 'कक्षा 11', 'कक्षा 12', '1st Year (College)', '2nd Year (College)', '3rd Year (College)', '4th Year (College)'],
+};
 
 const Register = () => {
   const [searchParams] = useSearchParams();
@@ -25,18 +18,25 @@ const Register = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm({
-    resolver: yupResolver(schema),
-    defaultValues: {
-      competitionId: searchParams.get('competition') || '',
-      studentStatus: false
-    }
+  const [selectedCompIds, setSelectedCompIds] = useState<string[]>(() => {
+    const preselected = searchParams.get('competition');
+    return preselected ? [preselected] : [];
   });
 
-  const selectedCompId = watch('competitionId');
-  const selectedComp = competitions.find(c => c._id === selectedCompId);
+  const [formData, setFormData] = useState({
+    participantName: '',
+    fatherName: '',
+    village: '',
+    className: '',
+    mobile: '',
+    studentStatus: false,
+    category: '',
+  });
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
     const fetchCompetitions = async () => {
       try {
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -52,11 +52,40 @@ const Register = () => {
     fetchCompetitions();
   }, []);
 
-  const onSubmit = async (data: any) => {
+  const toggleCompetition = (id: string) => {
+    setSelectedCompIds(prev =>
+      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
+    );
+    // Reset category and class when competition changes
+    setFormData(prev => ({ ...prev, category: '', className: '' }));
+  };
+
+  const handleCategoryChange = (cat: string) => {
+    setFormData(prev => ({ ...prev, category: cat, className: '' }));
+  };
+
+  const validate = () => {
+    const newErrors: Record<string, string> = {};
+    if (selectedCompIds.length === 0) newErrors.competitions = 'कम से कम एक प्रतियोगिता चुनें';
+    if (!formData.participantName.trim()) newErrors.participantName = 'प्रतिभागी का नाम अनिवार्य है';
+    if (!formData.fatherName.trim()) newErrors.fatherName = 'पिता का नाम अनिवार्य है';
+    if (!formData.village.trim()) newErrors.village = 'गाँव का नाम अनिवार्य है';
+    if (!/^[0-9]{10}$/.test(formData.mobile)) newErrors.mobile = 'सही 10 अंकों का मोबाइल नंबर दर्ज करें';
+    if (!formData.studentStatus) newErrors.studentStatus = 'विद्यार्थी होना अनिवार्य है';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
     setSubmitting(true);
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-      const res = await axios.post(`${apiUrl}/api/participants/register`, data);
+      const res = await axios.post(`${apiUrl}/api/participants/register`, {
+        competitionIds: selectedCompIds,
+        ...formData,
+      });
       toast.success('पंजीयन सफल हुआ!');
       navigate(`/receipt/${res.data.participant._id}`, { state: res.data });
     } catch (error: any) {
@@ -66,119 +95,197 @@ const Register = () => {
     }
   };
 
+  // Class options depend on category
+  const classOptions = formData.category ? CLASS_OPTIONS[formData.category] || null : null;
+
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin h-10 w-10 text-orange-600" /></div>;
 
   return (
     <div className="max-w-3xl mx-auto py-12 px-4 sm:px-6">
       <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-        <div className="bg-orange-600 py-6 px-8 text-center text-white">
+        {/* Header */}
+        <div className="bg-[#14213D] py-6 px-8 text-center text-white">
+          <div className="flex items-center justify-center gap-4 mb-3">
+            <img src={logoImg} alt="वन्दे मातरम् परिवार" className="h-16 w-16 rounded-full object-cover border-2 border-[#FF9933]" />
+            <div className="text-left">
+              <p className="text-[#FF9933] font-bold text-base leading-tight">वन्दे मातरम् परिवार, रेगवाँ</p>
+              <p className="text-white/70 text-xs">राष्ट्र सर्वोपरि</p>
+            </div>
+          </div>
           <h1 className="text-3xl font-bold">प्रतिभागी पंजीयन फॉर्म</h1>
-          <p className="mt-2 text-orange-100">प्रतिभामंच 2026 में आपका स्वागत है</p>
+          <p className="mt-1 text-orange-200">प्रतिभामंच 2026 में आपका स्वागत है</p>
         </div>
         
-        <form onSubmit={handleSubmit(onSubmit)} className="p-8 space-y-6">
-          {/* Competition Selection */}
+        <form onSubmit={onSubmit} className="p-8 space-y-6">
+
+          {/* Multiple Competition Selection */}
           <div>
-            <label className="block text-gray-700 font-semibold mb-2">प्रतियोगिता चुनें *</label>
-            <select 
-              {...register('competitionId')} 
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500"
-            >
-              <option value="">-- चयन करें --</option>
+            <label className="block text-gray-700 font-semibold mb-3">
+              प्रतियोगिता चुनें * <span className="text-gray-400 font-normal text-sm">(एक या अधिक चुन सकते हैं)</span>
+            </label>
+            <div className="space-y-3">
               {competitions.map(comp => (
-                <option key={comp._id} value={comp._id}>{comp.name}</option>
+                <label
+                  key={comp._id}
+                  className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                    selectedCompIds.includes(comp._id)
+                      ? 'border-orange-500 bg-orange-50'
+                      : 'border-gray-200 hover:border-orange-300 hover:bg-orange-50/40'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedCompIds.includes(comp._id)}
+                    onChange={() => toggleCompetition(comp._id)}
+                    className="h-5 w-5 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                  />
+                  <div className="flex-1">
+                    <span className="font-semibold text-gray-800">{comp.name}</span>
+                    {comp.entryFee > 0 && (
+                      <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-medium">
+                        ₹{comp.entryFee}
+                      </span>
+                    )}
+                    {comp.entryFee === 0 && (
+                      <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+                        Free
+                      </span>
+                    )}
+                  </div>
+                  {selectedCompIds.includes(comp._id) && (
+                    <CheckSquare className="w-5 h-5 text-orange-500 shrink-0" />
+                  )}
+                </label>
               ))}
-            </select>
-            {errors.competitionId && <p className="text-red-500 text-sm mt-1">{errors.competitionId.message}</p>}
+            </div>
+            {errors.competitions && <p className="text-red-500 text-sm mt-1">{errors.competitions}</p>}
           </div>
 
-          {selectedComp && selectedComp.categories && selectedComp.categories.length > 0 && selectedComp.slug !== 'chess' && (
+          {/* Category Selection (1st-8th or 9th-College) */}
+          <div>
+            <label className="block text-gray-700 font-semibold mb-3">
+              Category *
+            </label>
+            <div className="grid grid-cols-2 gap-4">
+              {Object.keys(CLASS_OPTIONS).map(cat => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => handleCategoryChange(cat)}
+                  className={`py-4 px-4 rounded-xl border-2 font-semibold text-sm transition-all duration-200 ${
+                    formData.category === cat
+                      ? 'border-orange-500 bg-orange-50 text-orange-700'
+                      : 'border-gray-200 text-gray-600 hover:border-orange-300 hover:bg-orange-50/40'
+                  }`}
+                >
+                  <div className="text-lg mb-1">{cat === '1st to 8th' ? '📚' : '🎓'}</div>
+                  <div>{cat === '1st to 8th' ? 'कक्षा 1 से 8' : 'कक्षा 9 से कॉलेज'}</div>
+                  <div className="text-xs text-gray-500 mt-1">({cat})</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Class Selection based on category */}
+          {classOptions && (
             <div>
-              <label className="block text-gray-700 font-semibold mb-2">श्रेणी (Category) *</label>
-              <select 
-                {...register('category')} 
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                required
+              <label className="block text-gray-700 font-semibold mb-2">कक्षा चुनें *</label>
+              <select
+                value={classOptions.includes(formData.className) ? formData.className : (formData.className ? '__manual__' : '')}
+                onChange={e => {
+                  if (e.target.value === '__manual__') {
+                    setFormData(prev => ({ ...prev, className: '' }));
+                  } else {
+                    setFormData(prev => ({ ...prev, className: e.target.value }));
+                  }
+                }}
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500 mb-2"
               >
-                <option value="">-- चयन करें --</option>
-                {selectedComp.categories.map((cat: string) => (
-                  <option key={cat} value={cat}>{cat}</option>
+                <option value="">-- कक्षा चुनें --</option>
+                {classOptions.map(cls => (
+                  <option key={cls} value={cls}>{cls}</option>
                 ))}
+                <option value="__manual__">✏️ मैन्युअल टाइप करें (अन्य)</option>
               </select>
+              {/* Manual class input */}
+              {(!classOptions.includes(formData.className)) && (
+                <input
+                  type="text"
+                  value={formData.className}
+                  onChange={e => setFormData(prev => ({ ...prev, className: e.target.value }))}
+                  placeholder="कक्षा लिखें जैसे: 5th, BA 2nd Year, आदि"
+                  className="w-full border border-orange-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-orange-50"
+                />
+              )}
             </div>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-gray-700 font-semibold mb-2">प्रतिभागी का नाम *</label>
-              <input 
-                type="text" 
-                {...register('participantName')} 
+              <input
+                type="text"
+                value={formData.participantName}
+                onChange={e => setFormData(prev => ({ ...prev, participantName: e.target.value }))}
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500"
                 placeholder="पूरा नाम"
               />
-              {errors.participantName && <p className="text-red-500 text-sm mt-1">{errors.participantName.message}</p>}
+              {errors.participantName && <p className="text-red-500 text-sm mt-1">{errors.participantName}</p>}
             </div>
             
             <div>
               <label className="block text-gray-700 font-semibold mb-2">पिता का नाम *</label>
-              <input 
-                type="text" 
-                {...register('fatherName')} 
+              <input
+                type="text"
+                value={formData.fatherName}
+                onChange={e => setFormData(prev => ({ ...prev, fatherName: e.target.value }))}
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
-              {errors.fatherName && <p className="text-red-500 text-sm mt-1">{errors.fatherName.message}</p>}
+              {errors.fatherName && <p className="text-red-500 text-sm mt-1">{errors.fatherName}</p>}
             </div>
 
             <div>
               <label className="block text-gray-700 font-semibold mb-2">गाँव का नाम *</label>
-              <input 
-                type="text" 
-                {...register('village')} 
+              <input
+                type="text"
+                value={formData.village}
+                onChange={e => setFormData(prev => ({ ...prev, village: e.target.value }))}
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
-              {errors.village && <p className="text-red-500 text-sm mt-1">{errors.village.message}</p>}
+              {errors.village && <p className="text-red-500 text-sm mt-1">{errors.village}</p>}
             </div>
 
             <div>
               <label className="block text-gray-700 font-semibold mb-2">मोबाइल नंबर *</label>
-              <input 
-                type="text" 
-                {...register('mobile')} 
+              <input
+                type="text"
+                value={formData.mobile}
+                onChange={e => setFormData(prev => ({ ...prev, mobile: e.target.value }))}
                 maxLength={10}
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500"
                 placeholder="10 अंकों का नंबर"
               />
-              {errors.mobile && <p className="text-red-500 text-sm mt-1">{errors.mobile.message}</p>}
-            </div>
-
-            <div>
-              <label className="block text-gray-700 font-semibold mb-2">कक्षा (Class)</label>
-              <input 
-                type="text" 
-                {...register('className')} 
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                required={selectedComp?.slug !== 'talent-hunt'}
-              />
+              {errors.mobile && <p className="text-red-500 text-sm mt-1">{errors.mobile}</p>}
             </div>
           </div>
 
           <div className="mt-6 border-t pt-6">
             <label className="flex items-start space-x-3 cursor-pointer">
-              <input 
-                type="checkbox" 
-                {...register('studentStatus')}
+              <input
+                type="checkbox"
+                checked={formData.studentStatus}
+                onChange={e => setFormData(prev => ({ ...prev, studentStatus: e.target.checked }))}
                 className="mt-1 h-5 w-5 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
               />
               <span className="text-gray-700 font-medium">
                 "मैं पुष्टि करता/करती हूँ कि मैं विद्यार्थी हूँ और दी गई जानकारी सही है।" *
               </span>
             </label>
-            {errors.studentStatus && <p className="text-red-500 text-sm mt-1 ml-8">{errors.studentStatus.message}</p>}
+            {errors.studentStatus && <p className="text-red-500 text-sm mt-1 ml-8">{errors.studentStatus}</p>}
           </div>
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={submitting}
             className={`w-full py-4 rounded-lg font-bold text-white text-lg transition ${submitting ? 'bg-orange-400 cursor-not-allowed' : 'bg-orange-600 hover:bg-orange-700 shadow-lg'}`}
           >
