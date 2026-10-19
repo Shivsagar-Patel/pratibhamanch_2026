@@ -135,7 +135,7 @@ const Receipt = () => {
                 <p className="font-extrabold text-[#14213D] text-sm">वन्दे मातरम् परिवार, रेगवाँ</p>
               </div>
               <p className="text-gray-500 text-xs">स्थान: श्रीराम मंदिर के सामने, रेगवां | दिनांक: 7, 8 और 9 नवंबर 2026</p>
-              <p className="text-gray-500 text-xs mt-0.5">संपर्क: 9302428721 | 9617125922 | Insta: @vande_matram_pariwar</p>
+              <p className="text-gray-500 text-xs mt-0.5">संपर्क: 9302428721 | 9617125922 | Insta: @vande_matram_parivar</p>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center print:hidden">

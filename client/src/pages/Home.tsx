@@ -90,12 +90,12 @@ const Home = () => {
               </span>
               <span>•</span>
               <a 
-                href="https://instagram.com/vande_matram_pariwar" 
+                href="https://www.instagram.com/vande_matram_parivar" 
                 target="_blank" 
                 rel="noopener noreferrer" 
                 className="inline-flex items-center gap-1.5 text-pink-300 font-bold hover:underline"
               >
-                📸 Instagram: @vande_matram_pariwar
+                📸 Instagram: @vande_matram_parivar
               </a>
               <span>•</span>
               <span className="inline-flex items-center gap-2 text-green-400 font-bold">
@@ -506,12 +506,12 @@ const Home = () => {
               <PhoneCall className="w-4 h-4" /> 9617125922
             </a>
             <a 
-              href="https://instagram.com/vande_matram_pariwar" 
+              href="https://www.instagram.com/vande_matram_parivar" 
               target="_blank" 
               rel="noopener noreferrer" 
               className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:opacity-95 text-white font-extrabold px-6 py-3 rounded-full shadow-lg transition-transform hover:-translate-y-0.5 text-sm"
             >
-              <InstagramIcon className="w-4 h-4" /> @vande_matram_pariwar
+              <InstagramIcon className="w-4 h-4" /> @vande_matram_parivar
             </a>
           </div>
         </div>
