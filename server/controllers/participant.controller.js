@@ -1,5 +1,43 @@
 import Participant from '../models/Participant.model.js';
 import Competition from '../models/Competition.model.js';
+import Counter from '../models/Counter.model.js';
+
+// Sequential Registration ID generator (VANDE-001, VANDE-002, VANDE-003...)
+const getNextRegistrationId = async () => {
+  let counter = await Counter.findById('participant_registration');
+  if (!counter) {
+    const participants = await Participant.find({}, { registrationId: 1 });
+    let maxNum = 0;
+    for (const p of participants) {
+      if (p.registrationId) {
+        const match = p.registrationId.match(/\d+$/);
+        if (match) {
+          const num = parseInt(match[0], 10);
+          if (!isNaN(num) && num > maxNum) maxNum = num;
+        }
+      }
+    }
+    counter = await Counter.create({ _id: 'participant_registration', seq: maxNum });
+  }
+
+  let updatedCounter = await Counter.findByIdAndUpdate(
+    'participant_registration',
+    { $inc: { seq: 1 } },
+    { new: true, upsert: true }
+  );
+
+  let regId = `VANDE-${updatedCounter.seq.toString().padStart(3, '0')}`;
+  while (await Participant.exists({ registrationId: regId })) {
+    updatedCounter = await Counter.findByIdAndUpdate(
+      'participant_registration',
+      { $inc: { seq: 1 } },
+      { new: true }
+    );
+    regId = `VANDE-${updatedCounter.seq.toString().padStart(3, '0')}`;
+  }
+
+  return regId;
+};
 
 export const registerParticipant = async (req, res) => {
   try {
@@ -38,28 +76,8 @@ export const registerParticipant = async (req, res) => {
       }
     }
 
-    // Check Duplicate for any of the selected competitions
-    for (const compId of competitionIds) {
-      const existing = await Participant.findOne({ mobile, competitionId: compId });
-      if (existing) {
-        const comp = await Competition.findById(compId);
-        return res.status(400).json({ message: `इस मोबाइल नंबर से "${comp?.name}" प्रतियोगिता के लिए पहले ही पंजीकरण हो चुका है।` });
-      }
-    }
-
-    // Generate Unique Registration ID (e.g., vande001, vande002...)
-    const lastParticipant = await Participant.findOne({ registrationId: /^vande\d+$/i }).sort({ createdAt: -1 });
-    let nextNum = 1;
-    if (lastParticipant && lastParticipant.registrationId) {
-      const match = lastParticipant.registrationId.match(/\d+$/);
-      if (match) {
-        nextNum = parseInt(match[0], 10) + 1;
-      }
-    } else {
-      const count = await Participant.countDocuments();
-      nextNum = count + 1;
-    }
-    const registrationId = `VANDE-${nextNum.toString().padStart(3, '0')}`;
+    // Generate Unique Registration ID sequentially (VANDE-001, VANDE-002...)
+    const registrationId = await getNextRegistrationId();
 
     // Use first competition as primary for backward compat
     const participant = await Participant.create({
@@ -94,8 +112,9 @@ export const registerParticipant = async (req, res) => {
     });
 
   } catch (error) {
+    
     if (error.code === 11000) {
-      return res.status(400).json({ message: 'इस मोबाइल नंबर से इस प्रतियोगिता के लिए पहले ही पंजीकरण हो चुका है।' });
+      return res.status(400).json({ message: 'पंजीकरण संख्या (Registration ID) पहले से मौजूद है। कृपया पुनः प्रयास करें।' });
     }
     res.status(500).json({ message: error.message || 'सर्वर त्रुटि' });
   }
