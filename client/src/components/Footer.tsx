@@ -43,12 +43,12 @@ const Footer = () => {
               📞 9617125922
             </a>
             <a 
-              href="https://instagram.com/vande_matram_pariwar" 
+              href="https://www.instagram.com/vande_matram_parivar" 
               target="_blank" 
               rel="noopener noreferrer" 
               className="inline-flex items-center gap-2 text-[#FF9933] hover:text-orange-300 font-semibold text-base transition pt-1"
             >
-              <InstagramIcon className="w-5 h-5 text-[#FF9933]" /> @vande_matram_pariwar
+              <InstagramIcon className="w-5 h-5 text-[#FF9933]" /> @vande_matram_parivar
             </a>
           </div>
           <div className="mt-4">
