@@ -88,6 +88,7 @@ export const getParticipants = async (req, res) => {
       });
     }
 
+    
     // Category filter
     if (req.query.category && req.query.category !== 'all') {
       conditions.push({ category: req.query.category });
