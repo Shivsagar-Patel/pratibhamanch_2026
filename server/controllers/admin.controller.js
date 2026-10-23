@@ -63,32 +63,90 @@ export const getDashboardStats = async (req, res) => {
   }
 };
 
-// @desc    Get all participants with pagination & search
+// @desc    Get all participants with pagination, search & filters
 export const getParticipants = async (req, res) => {
   try {
-    const pageSize = 100;
-    const page = Number(req.query.pageNumber) || 1;
+    const page = Math.max(1, Number(req.query.pageNumber) || Number(req.query.page) || 1);
+    const isAll = req.query.pageSize === 'all' || req.query.limit === 'all';
+    const pageSize = isAll ? 0 : Math.max(1, Number(req.query.pageSize) || Number(req.query.limit) || 20);
     
-    const keyword = req.query.keyword
-      ? {
-          $or: [
-            { participantName: { $regex: req.query.keyword, $options: 'i' } },
-            { mobile: { $regex: req.query.keyword, $options: 'i' } },
-            { registrationId: { $regex: req.query.keyword, $options: 'i' } }
-          ],
-        }
-      : {};
+    const conditions = [];
 
-    const count = await Participant.countDocuments({ ...keyword });
-    const participants = await Participant.find({ ...keyword })
+    // Search keyword
+    if (req.query.keyword && req.query.keyword.trim()) {
+      const kw = req.query.keyword.trim();
+      conditions.push({
+        $or: [
+          { participantName: { $regex: kw, $options: 'i' } },
+          { fatherName: { $regex: kw, $options: 'i' } },
+          { mobile: { $regex: kw, $options: 'i' } },
+          { registrationId: { $regex: kw, $options: 'i' } },
+          { village: { $regex: kw, $options: 'i' } },
+          { schoolCollege: { $regex: kw, $options: 'i' } },
+          { utrNumber: { $regex: kw, $options: 'i' } },
+        ],
+      });
+    }
+    
+
+    
+    // Category filter
+    if (req.query.category && req.query.category !== 'all') {
+      conditions.push({ category: req.query.category });
+    }
+
+    // Class filter
+    if (req.query.class && req.query.class !== 'all') {
+      conditions.push({ class: req.query.class });
+    }
+
+    // Payment Status filter
+    if (req.query.paymentStatus && req.query.paymentStatus !== 'all') {
+      conditions.push({ paymentStatus: req.query.paymentStatus });
+    }
+
+    // Competition filter
+    if (req.query.competitionId && req.query.competitionId !== 'all') {
+      conditions.push({
+        $or: [
+          { competitionIds: req.query.competitionId },
+          { competitionId: req.query.competitionId },
+        ],
+      });
+    }
+
+    const query = conditions.length > 0 ? { $and: conditions } : {};
+
+    const count = await Participant.countDocuments(query);
+    
+    let queryBuilder = Participant.find(query)
       .populate('competitionId', 'name')
       .populate('competitionIds', 'name')
-      .sort({ createdAt: -1 })
-      .limit(pageSize)
-      .skip(pageSize * (page - 1));
+      .sort({ createdAt: -1 });
 
-    res.json({ participants, page, pages: Math.ceil(count / pageSize), total: count });
+    if (!isAll && pageSize > 0) {
+      queryBuilder = queryBuilder.skip(pageSize * (page - 1)).limit(pageSize);
+    }
+
+    const participants = await queryBuilder;
+
+    // Fetch distinct categories & classes to populate filter dropdowns dynamically
+    const [availableCategories, availableClasses] = await Promise.all([
+      Participant.distinct('category', { category: { $nin: [null, ''] } }),
+      Participant.distinct('class', { class: { $nin: [null, ''] } }),
+    ]);
+
+    res.json({
+      participants,
+      page: isAll ? 1 : page,
+      pages: isAll ? 1 : Math.ceil(count / pageSize) || 1,
+      total: count,
+      pageSize: isAll ? count : pageSize,
+      availableCategories,
+      availableClasses,
+    });
   } catch (error) {
+    console.error('getParticipants error:', error);
     res.status(500).json({ message: 'Server Error' });
   }
 };
@@ -109,14 +167,17 @@ export const deleteParticipant = async (req, res) => {
 // @desc    Update payment status
 export const updatePaymentStatus = async (req, res) => {
   try {
-    const { paymentStatus, paymentMode, paidAmount } = req.body;
+    const { paymentStatus, paymentMode, paidAmount, utrNumber } = req.body;
+    const updateFields = { 
+      paymentStatus, 
+      paymentMode,
+      paidAmount: Number(paidAmount) || 0
+    };
+    if (utrNumber !== undefined) updateFields.utrNumber = utrNumber.trim();
+
     const participant = await Participant.findByIdAndUpdate(
       req.params.id,
-      { 
-        paymentStatus, 
-        paymentMode,
-        paidAmount: Number(paidAmount) || 0
-      },
+      updateFields,
       { new: true }
     );
     if (!participant) {
@@ -147,6 +208,7 @@ export const updateParticipant = async (req, res) => {
       paymentStatus,
       paymentMode,
       paidAmount,
+      utrNumber,
     } = req.body;
 
     const updateData = {};
@@ -164,6 +226,7 @@ export const updateParticipant = async (req, res) => {
     if (paymentStatus !== undefined) updateData.paymentStatus = paymentStatus;
     if (paymentMode !== undefined) updateData.paymentMode = paymentMode;
     if (paidAmount !== undefined) updateData.paidAmount = Number(paidAmount) || 0;
+    if (utrNumber !== undefined) updateData.utrNumber = utrNumber.trim();
 
     if (competitionIds && Array.isArray(competitionIds) && competitionIds.length > 0) {
       updateData.competitionIds = competitionIds;
