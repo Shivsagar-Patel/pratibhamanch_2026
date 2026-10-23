@@ -87,6 +87,7 @@ export const getParticipants = async (req, res) => {
         ],
       });
     }
+    
 
     
     // Category filter
