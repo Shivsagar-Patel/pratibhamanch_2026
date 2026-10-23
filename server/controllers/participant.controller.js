@@ -55,10 +55,12 @@ export const registerParticipant = async (req, res) => {
       address,
       studentStatus,
       category,
+      paymentMode,
+      utrNumber,
     } = req.body;
 
-    if (!competitionIds || competitionIds.length === 0 || !participantName || !fatherName || !village || !mobile) {
-      return res.status(400).json({ message: 'कृपया सभी आवश्यक जानकारी भरें।' });
+    if (!competitionIds || competitionIds.length === 0 || !participantName || !fatherName || !village || !mobile || !className || !category) {
+      return res.status(400).json({ message: 'कृपया सभी आवश्यक जानकारी (प्रतियोगिता, नाम, पिता का नाम, गाँव, मोबाइल, श्रेणी, कक्षा) भरें।' });
     }
 
     if (!studentStatus) {
@@ -97,7 +99,8 @@ export const registerParticipant = async (req, res) => {
       studentStatus,
       category,
       paymentStatus: 'pending',
-      paymentMode: 'cash',
+      paymentMode: paymentMode === 'online' ? 'online' : 'cash',
+      utrNumber: utrNumber ? utrNumber.trim() : undefined,
     });
 
     // Populate for response

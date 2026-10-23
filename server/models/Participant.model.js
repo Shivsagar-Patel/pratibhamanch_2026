@@ -20,6 +20,7 @@ const participantSchema = new mongoose.Schema(
     paymentStatus: { type: String, enum: ['pending', 'paid'], default: 'pending' },
     paymentMode: { type: String, enum: ['cash', 'online'], default: 'cash' },
     paidAmount: { type: Number, default: 0 },
+    utrNumber: { type: String, trim: true },
   },
   { timestamps: true }
 );

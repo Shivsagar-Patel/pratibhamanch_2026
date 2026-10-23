@@ -117,7 +117,17 @@ const Receipt = () => {
                     { label: 'मोबाइल नंबर', value: data.participant.mobile },
                     { label: 'गाँव', value: data.participant.village },
                     ...(data.participant.class ? [{ label: 'कक्षा', value: data.participant.class }] : []),
-                    ...(data.participant.category ? [{ label: 'आयु वर्ग', value: data.participant.category }] : []),
+                    ...(data.participant.category ? [{ label: 'आयु वर्ग / श्रेणी', value: data.participant.category }] : []),
+                    { 
+                      label: 'भुगतान माध्यम', 
+                      value: data.participant.paymentMode === 'online' ? 'ऑनलाइन UPI (PhonePe)' : 'नकद (Cash)' 
+                    },
+                    ...(data.participant.utrNumber ? [{ label: 'UTR / Transaction ID', value: data.participant.utrNumber, bold: true }] : []),
+                    {
+                      label: 'भुगतान स्थिति (Status)',
+                      value: data.participant.paymentStatus === 'paid' ? 'पूर्ण (Paid) ✓' : 'लंबित (Pending Verification)',
+                      bold: true,
+                    },
                   ].map(({ label, value, bold }, i) => (
                     <tr key={i} className={`border-b border-gray-100 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
                       <td className="py-2.5 px-4 text-gray-500 font-medium w-2/5">{label}</td>
