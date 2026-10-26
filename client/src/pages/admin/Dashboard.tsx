@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import Cookies from 'js-cookie';
-import { Users, Trophy, IndianRupee, CheckCircle2, Clock, ArrowRight, Loader2, Sparkles } from 'lucide-react';
+import { Users, Trophy, IndianRupee, CheckCircle2, Clock, ArrowRight, Loader2, Sparkles, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import logoImg from '../../assets/logo.png';
 
@@ -133,6 +133,35 @@ const Dashboard = () => {
           </div>
         </div>
 
+      </div>
+
+      {/* 📖 Booklet Distribution Summary Banner */}
+      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-5 sm:p-6 text-white shadow-md border border-indigo-500/20 flex flex-col md:flex-row items-center justify-between gap-5">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300 shrink-0 shadow-inner">
+            <BookOpen className="w-6 h-6 text-indigo-300" />
+          </div>
+          <div>
+            <h3 className="font-extrabold text-base sm:text-lg text-white">तैयारी पुस्तिका (Booklet) वितरण स्थिति</h3>
+            <p className="text-xs text-indigo-200/80 mt-0.5">प्रतिभागियों को दी गई और शेष बची बुकलेट की कुल संख्या</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-4 sm:gap-6 self-stretch md:self-auto justify-around">
+          <div className="text-center px-4 py-2 bg-white/10 rounded-2xl border border-white/10">
+            <p className="text-xs text-emerald-300 font-bold uppercase tracking-wider">दी जा चुकी (Given)</p>
+            <p className="text-2xl sm:text-3xl font-black text-emerald-400 mt-0.5">{stats.bookletGivenCount || 0}</p>
+          </div>
+          <div className="text-center px-4 py-2 bg-white/10 rounded-2xl border border-white/10">
+            <p className="text-xs text-amber-300 font-bold uppercase tracking-wider">बाकी (Pending)</p>
+            <p className="text-2xl sm:text-3xl font-black text-amber-400 mt-0.5">{stats.bookletPendingCount || 0}</p>
+          </div>
+          <Link
+            to="/admin/participants"
+            className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition shadow-sm self-center text-center hidden sm:flex items-center gap-1.5"
+          >
+            प्रतिभागी सूची <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
       </div>
 
       {/* 🏆 Registrations by Competition */}

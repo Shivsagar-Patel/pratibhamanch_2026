@@ -20,7 +20,8 @@ import {
   ChevronRight, 
   ChevronsLeft, 
   ChevronsRight, 
-  GraduationCap
+  GraduationCap,
+  BookOpen
 } from 'lucide-react';
 import logoImg from '../../assets/logo.png';
 
@@ -47,6 +48,7 @@ const ParticipantsList = () => {
   const [filterClass, setFilterClass] = useState('all');
   const [filterPayment, setFilterPayment] = useState('all');
   const [filterCompetition, setFilterCompetition] = useState('all');
+  const [filterBooklet, setFilterBooklet] = useState('all');
 
   // Dynamic filter options from server
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
@@ -55,6 +57,7 @@ const ParticipantsList = () => {
   // Modals & Actions
   const [viewParticipant, setViewParticipant] = useState<any>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [updatingBookletId, setUpdatingBookletId] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
 
   // Payment Modal State
@@ -81,6 +84,7 @@ const ParticipantsList = () => {
     paymentMode: 'cash',
     paidAmount: 0,
     utrNumber: '',
+    bookletGiven: false,
   });
 
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -88,7 +92,7 @@ const ParticipantsList = () => {
   // Fetch participants whenever page, pageSize, search, or filters change
   useEffect(() => {
     fetchParticipants();
-  }, [page, pageSize, searchTerm, filterCategory, filterClass, filterPayment, filterCompetition]);
+  }, [page, pageSize, searchTerm, filterCategory, filterClass, filterPayment, filterCompetition, filterBooklet]);
 
   useEffect(() => {
     fetchCompetitions();
@@ -116,6 +120,7 @@ const ParticipantsList = () => {
       if (filterClass !== 'all') queryParams.set('class', filterClass);
       if (filterPayment !== 'all') queryParams.set('paymentStatus', filterPayment);
       if (filterCompetition !== 'all') queryParams.set('competitionId', filterCompetition);
+      if (filterBooklet !== 'all') queryParams.set('bookletGiven', filterBooklet);
 
       const res = await axios.get(`${apiUrl}/api/admin/participants?${queryParams.toString()}`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -143,7 +148,8 @@ const ParticipantsList = () => {
     filterCategory !== 'all' || 
     filterClass !== 'all' || 
     filterPayment !== 'all' || 
-    filterCompetition !== 'all';
+    filterCompetition !== 'all' ||
+    filterBooklet !== 'all';
 
   const resetFilters = () => {
     setSearchTerm('');
@@ -151,7 +157,35 @@ const ParticipantsList = () => {
     setFilterClass('all');
     setFilterPayment('all');
     setFilterCompetition('all');
+    setFilterBooklet('all');
     setPage(1);
+  };
+
+  const handleToggleBooklet = async (p: any) => {
+    try {
+      setUpdatingBookletId(p._id);
+      const token = Cookies.get('adminToken');
+      const newStatus = !p.bookletGiven;
+      const res = await axios.put(
+        `${apiUrl}/api/admin/participants/${p._id}/booklet`,
+        { bookletGiven: newStatus },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const updated = res.data.participant;
+      setParticipants(prev => prev.map(item => item._id === p._id ? { ...item, bookletGiven: newStatus, bookletGivenAt: updated?.bookletGivenAt } : item));
+      if (viewParticipant && viewParticipant._id === p._id) {
+        setViewParticipant((prev: any) => ({ ...prev, bookletGiven: newStatus, bookletGivenAt: updated?.bookletGivenAt }));
+      }
+      if (newStatus) {
+        toast.success(`${p.participantName}: बुकलेट दी गई (Marked as Given)`);
+      } else {
+        toast.info(`${p.participantName}: बुकलेट बाकी मार्क की गई`);
+      }
+    } catch (error) {
+      toast.error('बुकलेट स्थिति अपडेट करने में त्रुटि हुई');
+    } finally {
+      setUpdatingBookletId(null);
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -223,6 +257,7 @@ const ParticipantsList = () => {
       paymentMode: p.paymentMode || 'cash',
       paidAmount: p.paidAmount !== undefined ? p.paidAmount : 0,
       utrNumber: p.utrNumber || '',
+      bookletGiven: Boolean(p.bookletGiven),
     });
   };
 
@@ -283,6 +318,7 @@ const ParticipantsList = () => {
       if (filterClass !== 'all') queryParams.set('class', filterClass);
       if (filterPayment !== 'all') queryParams.set('paymentStatus', filterPayment);
       if (filterCompetition !== 'all') queryParams.set('competitionId', filterCompetition);
+      if (filterBooklet !== 'all') queryParams.set('bookletGiven', filterBooklet);
       queryParams.set('pageSize', 'all');
 
       const res = await axios.get(`${apiUrl}/api/admin/participants?${queryParams.toString()}`, {
@@ -291,7 +327,7 @@ const ParticipantsList = () => {
 
       const exportData = res.data.participants && res.data.participants.length > 0 ? res.data.participants : participants;
 
-      const headers = ['Reg ID', 'Name', 'Father Name', 'Mobile', 'Village', 'Class', 'Category', 'Competition', 'Payment Status', 'Payment Mode', 'UTR / Ref ID', 'Amount Paid (₹)', 'Registered On'];
+      const headers = ['Reg ID', 'Name', 'Father Name', 'Mobile', 'Village', 'Class', 'Category', 'Competition', 'Payment Status', 'Payment Mode', 'UTR / Ref ID', 'Amount Paid (₹)', 'Booklet Given', 'Registered On'];
       const rows = exportData.map((p: any) => [
         p.registrationId,
         p.participantName,
@@ -305,6 +341,7 @@ const ParticipantsList = () => {
         p.paymentMode || 'cash',
         p.utrNumber || '-',
         p.paidAmount || 0,
+        p.bookletGiven ? 'हाँ (Given)' : 'नहीं (Not Given)',
         new Date(p.createdAt).toLocaleDateString('hi-IN'),
       ]);
 
@@ -433,7 +470,7 @@ const ParticipantsList = () => {
         </div>
 
         {/* Dropdown Filters Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-3 border-t border-gray-100">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 pt-3 border-t border-gray-100">
           
           {/* Category Filter */}
           <div>
@@ -518,6 +555,26 @@ const ParticipantsList = () => {
             </select>
           </div>
 
+          {/* Booklet Status Filter */}
+          <div>
+            <label className="block text-xs font-bold text-gray-600 mb-1 flex items-center gap-1">
+              <BookOpen className="w-3.5 h-3.5 text-indigo-500" />
+              बुकलेट (Booklet)
+            </label>
+            <select
+              value={filterBooklet}
+              onChange={(e) => {
+                setFilterBooklet(e.target.value);
+                setPage(1);
+              }}
+              className="w-full bg-gray-50 hover:bg-white focus:bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-500 transition"
+            >
+              <option value="all">सभी (All)</option>
+              <option value="true">दी गई (Booklet Given)</option>
+              <option value="false">नहीं दी गई (Pending / Not Given)</option>
+            </select>
+          </div>
+
         </div>
       </div>
 
@@ -526,7 +583,7 @@ const ParticipantsList = () => {
         
         {/* Table Content */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[1050px]">
+          <table className="w-full text-left border-collapse min-w-[1150px]">
             <thead>
               <tr className="bg-gray-50/90 text-gray-600 text-xs uppercase tracking-wider border-b border-gray-200">
                 <th className="p-3.5 font-bold text-center w-12">क्र.</th>
@@ -538,6 +595,7 @@ const ParticipantsList = () => {
                 <th className="p-3.5 font-bold">गाँव</th>
                 <th className="p-3.5 font-bold">प्रतियोगिता</th>
                 <th className="p-3.5 font-bold">Payment</th>
+                <th className="p-3.5 font-bold text-center">बुकलेट (Booklet)</th>
                 <th className="p-3.5 font-bold">दिनांक</th>
                 <th className="p-3.5 font-bold text-center">कार्रवाई</th>
               </tr>
@@ -545,7 +603,7 @@ const ParticipantsList = () => {
             <tbody className="divide-y divide-gray-100">
               {loading ? (
                 <tr>
-                  <td colSpan={11} className="p-12 text-center text-gray-500">
+                  <td colSpan={12} className="p-12 text-center text-gray-500">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <Loader2 className="w-7 h-7 text-orange-600 animate-spin" />
                       <span className="text-sm font-semibold">डाटा लोड हो रहा है...</span>
@@ -554,7 +612,7 @@ const ParticipantsList = () => {
                 </tr>
               ) : participants.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="p-12 text-center text-gray-500">
+                  <td colSpan={12} className="p-12 text-center text-gray-500">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <p className="text-base font-bold text-gray-700">कोई प्रतिभागी नहीं मिला।</p>
                       <p className="text-xs text-gray-400">फ़िल्टर बदलकर पुनः प्रयास करें।</p>
@@ -665,6 +723,29 @@ const ParticipantsList = () => {
                               UTR: {p.utrNumber}
                             </span>
                           )}
+                        </button>
+                      </td>
+
+                      {/* Booklet Status Toggle Button */}
+                      <td className="p-3.5 text-center whitespace-nowrap">
+                        <button
+                          onClick={() => handleToggleBooklet(p)}
+                          disabled={updatingBookletId === p._id}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition shadow-2xs cursor-pointer ${
+                            p.bookletGiven
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100 hover:border-emerald-400'
+                              : 'bg-gray-100 text-gray-600 border-gray-300 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-300'
+                          } disabled:opacity-50`}
+                          title={p.bookletGiven ? 'बुकलेट दी जा चुकी है (क्लिक करके अनमार्क करें)' : 'बुकलेट नहीं दी गई (क्लिक करके "दी गई" मार्क करें)'}
+                        >
+                          {updatingBookletId === p._id ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-500" />
+                          ) : p.bookletGiven ? (
+                            <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+                          ) : (
+                            <BookOpen className="w-3.5 h-3.5 text-gray-400" />
+                          )}
+                          <span>{p.bookletGiven ? 'दी गई ✓' : 'नहीं दी'}</span>
                         </button>
                       </td>
 
@@ -837,6 +918,12 @@ const ParticipantsList = () => {
                 { label: 'Payment Mode', value: viewParticipant.paymentMode === 'online' ? 'ऑनलाइन (Online UPI)' : 'नकद (Cash)' },
                 ...(viewParticipant.utrNumber ? [{ label: 'UTR / Transaction ID', value: viewParticipant.utrNumber }] : []),
                 { label: 'प्राप्त राशि (Amount Paid)', value: `₹${viewParticipant.paidAmount || 0}` },
+                { 
+                  label: 'बुकलेट स्थिति (Booklet)', 
+                  value: viewParticipant.bookletGiven 
+                    ? `दी गई (Given) ✓ ${viewParticipant.bookletGivenAt ? `[${new Date(viewParticipant.bookletGivenAt).toLocaleDateString('hi-IN')}]` : ''}` 
+                    : 'नहीं दी गई (Not Given / Pending)' 
+                },
                 { label: 'पंजीयन दिनांक', value: new Date(viewParticipant.createdAt).toLocaleString('hi-IN') },
               ].map(({ label, value }) => (
                 <div key={label} className="flex justify-between py-2 border-b border-gray-100">
@@ -1174,6 +1261,28 @@ const ParticipantsList = () => {
                       className="w-full pl-8 pr-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:outline-none font-black text-gray-900 text-sm"
                     />
                   </div>
+                </div>
+
+                {/* Booklet Given Option */}
+                <div className="md:col-span-2 bg-indigo-50/60 border border-indigo-200/60 p-3.5 rounded-2xl flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 bg-indigo-100 text-indigo-700 rounded-xl">
+                      <BookOpen className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-gray-900">बुकलेट प्रदान की गई (Booklet Given)?</p>
+                      <p className="text-xs text-gray-500">यदि प्रतिभागी को तैयारी पुस्तिका दे दी गई है तो इसे चालू (Yes) करें</p>
+                    </div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={editForm.bookletGiven}
+                      onChange={e => setEditForm({ ...editForm, bookletGiven: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                  </label>
                 </div>
 
               </div>
