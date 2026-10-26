@@ -5,7 +5,8 @@ import {
   getParticipants, 
   deleteParticipant, 
   updatePaymentStatus,
-  updateParticipant 
+  updateParticipant,
+  updateBookletStatus 
 } from '../controllers/admin.controller.js';
 import { 
   getCompetitions, 
@@ -23,6 +24,7 @@ router.get('/participants', protect, getParticipants);
 router.put('/participants/:id', protect, updateParticipant);
 router.delete('/participants/:id', protect, deleteParticipant);
 router.put('/participants/:id/payment', protect, updatePaymentStatus);
+router.put('/participants/:id/booklet', protect, updateBookletStatus);
 
 // Competitions management routes
 router.get('/competitions', protect, getCompetitions);

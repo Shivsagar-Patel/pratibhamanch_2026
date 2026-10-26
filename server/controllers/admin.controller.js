@@ -44,11 +44,13 @@ export const getDashboardStats = async (req, res) => {
       };
     }));
 
-    // Calculate total fees collected & payment counts
-    const participants = await Participant.find({}, 'paidAmount paymentStatus');
+    // Calculate total fees collected & payment counts & booklet counts
+    const participants = await Participant.find({}, 'paidAmount paymentStatus bookletGiven');
     const totalRevenue = participants.reduce((sum, p) => sum + (p.paidAmount || 0), 0);
     const paidCount = participants.filter(p => p.paymentStatus === 'paid').length;
     const pendingCount = participants.filter(p => p.paymentStatus === 'pending').length;
+    const bookletGivenCount = participants.filter(p => p.bookletGiven === true).length;
+    const bookletPendingCount = totalParticipants - bookletGivenCount;
 
     res.json({
       totalParticipants,
@@ -56,7 +58,9 @@ export const getDashboardStats = async (req, res) => {
       activeCompetitions: competitions.filter(c => c.isActive).length,
       totalRevenue,
       paidCount,
-      pendingCount
+      pendingCount,
+      bookletGivenCount,
+      bookletPendingCount,
     });
   } catch (error) {
     res.status(500).json({ message: 'Server Error' });
@@ -103,6 +107,15 @@ export const getParticipants = async (req, res) => {
     // Payment Status filter
     if (req.query.paymentStatus && req.query.paymentStatus !== 'all') {
       conditions.push({ paymentStatus: req.query.paymentStatus });
+    }
+
+    // Booklet Given filter ('true' / 'false' / 'all')
+    if (req.query.bookletGiven && req.query.bookletGiven !== 'all') {
+      if (req.query.bookletGiven === 'true') {
+        conditions.push({ bookletGiven: true });
+      } else if (req.query.bookletGiven === 'false') {
+        conditions.push({ bookletGiven: { $ne: true } });
+      }
     }
 
     // Competition filter
@@ -209,6 +222,7 @@ export const updateParticipant = async (req, res) => {
       paymentMode,
       paidAmount,
       utrNumber,
+      bookletGiven,
     } = req.body;
 
     const updateData = {};
@@ -227,6 +241,10 @@ export const updateParticipant = async (req, res) => {
     if (paymentMode !== undefined) updateData.paymentMode = paymentMode;
     if (paidAmount !== undefined) updateData.paidAmount = Number(paidAmount) || 0;
     if (utrNumber !== undefined) updateData.utrNumber = utrNumber.trim();
+    if (bookletGiven !== undefined) {
+      updateData.bookletGiven = Boolean(bookletGiven);
+      updateData.bookletGivenAt = updateData.bookletGiven ? new Date() : null;
+    }
 
     if (competitionIds && Array.isArray(competitionIds) && competitionIds.length > 0) {
       updateData.competitionIds = competitionIds;
@@ -248,6 +266,37 @@ export const updateParticipant = async (req, res) => {
     res.json({ message: 'प्रतिभागी का विवरण सफलतापूर्वक अपडेट किया गया', participant });
   } catch (error) {
     res.status(500).json({ message: error.message || 'Server Error' });
+  }
+};
+
+// @desc    Update booklet given status
+export const updateBookletStatus = async (req, res) => {
+  try {
+    const { bookletGiven } = req.body;
+    const isGiven = Boolean(bookletGiven);
+    const updateData = {
+      bookletGiven: isGiven,
+      bookletGivenAt: isGiven ? new Date() : null,
+    };
+
+    const participant = await Participant.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true }
+    )
+      .populate('competitionId', 'name')
+      .populate('competitionIds', 'name');
+
+    if (!participant) {
+      return res.status(404).json({ message: 'प्रतिभागी नहीं मिला।' });
+    }
+
+    res.json({
+      message: isGiven ? 'बुकलेट सफलतापूर्वक प्रदान की गई' : 'बुकलेट स्थिति अपडेट की गई (नहीं दी)',
+      participant,
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error' });
   }
 };
 

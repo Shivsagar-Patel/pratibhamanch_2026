@@ -21,6 +21,8 @@ const participantSchema = new mongoose.Schema(
     paymentMode: { type: String, enum: ['cash', 'online'], default: 'cash' },
     paidAmount: { type: Number, default: 0 },
     utrNumber: { type: String, trim: true },
+    bookletGiven: { type: Boolean, default: false },
+    bookletGivenAt: { type: Date },
   },
   { timestamps: true }
 );
