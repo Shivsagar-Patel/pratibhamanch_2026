@@ -96,16 +96,16 @@ const Dashboard = () => {
         </div>
 
         {/* Total Revenue Collected */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex items-center justify-between gap-3 hover:shadow-md transition">
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider truncate">कुल प्राप्त राशि</p>
-            <p className="text-2xl sm:text-3xl lg:text-4xl font-black text-emerald-600 mt-1 tracking-tight truncate">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6 flex items-center justify-between gap-2.5 hover:shadow-md transition">
+          <div className="flex-1">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider whitespace-nowrap">कुल प्राप्त राशि</p>
+            <p className="text-2xl sm:text-3xl font-extrabold text-emerald-600 mt-1 tracking-tight whitespace-nowrap">
               ₹{Number(stats.totalRevenue || 0).toLocaleString('en-IN')}
             </p>
             <p className="text-xs text-gray-500 mt-1">फीस संग्रह (नकद/UPI)</p>
           </div>
-          <div className="w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 shrink-0">
-            <IndianRupee className="w-7 h-7" />
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 shrink-0">
+            <IndianRupee className="w-6 h-6 sm:w-7 sm:h-7" />
           </div>
         </div>
 
